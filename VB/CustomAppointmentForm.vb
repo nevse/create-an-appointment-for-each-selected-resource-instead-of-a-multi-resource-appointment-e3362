@@ -1,5 +1,4 @@
-﻿Imports Microsoft.VisualBasic
-Imports System
+﻿Imports System
 Imports System.Collections.Generic
 Imports System.Text
 Imports DevExpress.XtraScheduler
@@ -7,293 +6,295 @@ Imports DevExpress.XtraScheduler.UI
 Imports System.Windows.Forms
 
 Namespace SchedulerMultiResAppointments
-	Partial Public Class CustomAppointmentForm
-		Inherits DevExpress.XtraEditors.XtraForm
-		Private control As SchedulerControl
-		Private apt As Appointment
-		Private openRecurrenceForm As Boolean = False
-		Private suspendUpdateCount As Integer
+    Partial Public Class CustomAppointmentForm
+        Inherits DevExpress.XtraEditors.XtraForm
 
-		' The CustomAppointmentFormController class is inherited from
-		' the AppointmentFormController to add custom properties.
-		' See its declaration below.
-		Private controller As CustomAppointmentFormController
+        Private control As SchedulerControl
+        Private apt As Appointment
+        Private openRecurrenceForm As Boolean = False
+        Private suspendUpdateCount As Integer
 
-		Protected ReadOnly Property Appointments() As AppointmentStorage
-			Get
-				Return control.Storage.Appointments
-			End Get
-		End Property
+        ' The CustomAppointmentFormController class is inherited from
+        ' the AppointmentFormController to add custom properties.
+        ' See its declaration below.
+        Private controller As CustomAppointmentFormController
 
-		Protected ReadOnly Property IsUpdateSuspended() As Boolean
-			Get
-				Return suspendUpdateCount > 0
-			End Get
-		End Property
+        Protected ReadOnly Property Appointments() As AppointmentStorage
+            Get
+                Return control.Storage.Appointments
+            End Get
+        End Property
 
-		Public Sub New(ByVal control As SchedulerControl, ByVal apt As Appointment, ByVal openRecurrenceForm As Boolean)
-			Me.openRecurrenceForm = openRecurrenceForm
-			Me.controller = New CustomAppointmentFormController(control, apt)
-			Me.apt = apt
-			Me.control = control
+        Protected ReadOnly Property IsUpdateSuspended() As Boolean
+            Get
+                Return suspendUpdateCount > 0
+            End Get
+        End Property
 
-			' Required for Windows Form Designer support
-			SuspendUpdate()
-			InitializeComponent()
-			ResumeUpdate()
-			UpdateForm()
+        Public Sub New(ByVal control As SchedulerControl, ByVal apt As Appointment, ByVal openRecurrenceForm As Boolean)
+            Me.openRecurrenceForm = openRecurrenceForm
+            Me.controller = New CustomAppointmentFormController(control, apt)
+            Me.apt = apt
+            Me.control = control
 
-			' TODO: Add any constructor code after InitializeComponent call
-			Me.edResources.SchedulerControl = control
-		End Sub
+            ' Required for Windows Form Designer support
+            SuspendUpdate()
+            InitializeComponent()
+            ResumeUpdate()
+            UpdateForm()
 
-		#Region "Recurrence"
-		Private Sub MyAppointmentEditForm_Activated(ByVal sender As Object, ByVal e As System.EventArgs) Handles MyBase.Activated
-			' Required to show the recurrence form.
-			If openRecurrenceForm Then
-				openRecurrenceForm = False
-				OnRecurrenceButton()
-			End If
-		End Sub
-		Private Sub btnRecurrence_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnRecurrence.Click
-			OnRecurrenceButton()
-		End Sub
+            ' TODO: Add any constructor code after InitializeComponent call
+            Me.edResources.SchedulerControl = control
+        End Sub
 
-		Private Sub OnRecurrenceButton()
-			ShowRecurrenceForm()
-		End Sub
+        #Region "Recurrence"
+        Private Sub MyAppointmentEditForm_Activated(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Activated
+            ' Required to show the recurrence form.
+            If openRecurrenceForm Then
+                openRecurrenceForm = False
+                OnRecurrenceButton()
+            End If
+        End Sub
+        Private Sub btnRecurrence_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnRecurrence.Click
+            OnRecurrenceButton()
+        End Sub
 
-		Private Sub ShowRecurrenceForm()
-			If (Not control.SupportsRecurrence) Then
-				Return
-			End If
+        Private Sub OnRecurrenceButton()
+            ShowRecurrenceForm()
+        End Sub
 
-			' Prepare to edit the appointment's recurrence.
-			Dim editedAptCopy As Appointment = controller.EditedAppointmentCopy
-			Dim editedPattern As Appointment = controller.EditedPattern
-			Dim patternCopy As Appointment = controller.PrepareToRecurrenceEdit()
+        Private Sub ShowRecurrenceForm()
+            If Not control.SupportsRecurrence Then
+                Return
+            End If
 
-			Dim dlg As New AppointmentRecurrenceForm(patternCopy, control.OptionsView.FirstDayOfWeek, controller)
+            ' Prepare to edit the appointment's recurrence.
+            Dim editedAptCopy As Appointment = controller.EditedAppointmentCopy
+            Dim editedPattern As Appointment = controller.EditedPattern
+            Dim patternCopy As Appointment = controller.PrepareToRecurrenceEdit()
 
-			' Required for skin support.
-			dlg.LookAndFeel.ParentLookAndFeel = Me.LookAndFeel.ParentLookAndFeel
+            Dim dlg As New AppointmentRecurrenceForm(patternCopy, control.OptionsView.FirstDayOfWeek, controller)
 
-			Dim result As DialogResult = dlg.ShowDialog(Me)
-			dlg.Dispose()
+            ' Required for skin support.
+            dlg.LookAndFeel.ParentLookAndFeel = Me.LookAndFeel.ParentLookAndFeel
 
-			If result = System.Windows.Forms.DialogResult.Abort Then
-				controller.RemoveRecurrence()
-			Else
-				If result = System.Windows.Forms.DialogResult.OK Then
-					controller.ApplyRecurrence(patternCopy)
-					If controller.EditedAppointmentCopy IsNot editedAptCopy Then
-						UpdateForm()
-					End If
-				End If
-			End If
-			UpdateIntervalControls()
-		End Sub
+            Dim result As DialogResult = dlg.ShowDialog(Me)
+            dlg.Dispose()
 
-		#End Region
+            If result = DialogResult.Abort Then
+                controller.RemoveRecurrence()
+            Else
+                If result = DialogResult.OK Then
+                    controller.ApplyRecurrence(patternCopy)
+                    If controller.EditedAppointmentCopy IsNot editedAptCopy Then
+                        UpdateForm()
+                    End If
+                End If
+            End If
+            UpdateIntervalControls()
+        End Sub
 
-		#Region "Form control events"
+        #End Region
 
-		Private Sub dtStart_EditValueChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles dtStart.EditValueChanged
-			If (Not IsUpdateSuspended) Then
-				controller.DisplayStart = dtStart.DateTime.Date + timeStart.Time.TimeOfDay
-			End If
-			UpdateIntervalControls()
-		End Sub
+        #Region "Form control events"
 
-		Private Sub timeStart_EditValueChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles timeStart.EditValueChanged
-			If (Not IsUpdateSuspended) Then
-				controller.DisplayStart = dtStart.DateTime.Date + timeStart.Time.TimeOfDay
-			End If
-			UpdateIntervalControls()
-		End Sub
-		Private Sub timeEnd_EditValueChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles timeEnd.EditValueChanged
-			If IsUpdateSuspended Then
-				Return
-			End If
-			If IsIntervalValid() Then
-				controller.DisplayEnd = dtEnd.DateTime.Date + timeEnd.Time.TimeOfDay
-			Else
-				timeEnd.EditValue = New DateTime(controller.DisplayEnd.TimeOfDay.Ticks)
-			End If
+        Private Sub dtStart_EditValueChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles dtStart.EditValueChanged
+            If Not IsUpdateSuspended Then
+                controller.DisplayStart = dtStart.DateTime.Date + timeStart.Time.TimeOfDay
+            End If
+            UpdateIntervalControls()
+        End Sub
 
-		End Sub
-		Private Sub dtEnd_EditValueChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles dtEnd.EditValueChanged
-			If IsUpdateSuspended Then
-				Return
-			End If
-			If IsIntervalValid() Then
-				controller.DisplayEnd = dtEnd.DateTime.Date + timeEnd.Time.TimeOfDay
-			Else
-				dtEnd.EditValue = controller.DisplayEnd.Date
-			End If
-		End Sub
-		Private Function IsIntervalValid() As Boolean
-			Dim start As DateTime = dtStart.DateTime + timeStart.Time.TimeOfDay
-			Dim [end] As DateTime = dtEnd.DateTime + timeEnd.Time.TimeOfDay
-			Return [end] >= start
-		End Function
+        Private Sub timeStart_EditValueChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles timeStart.EditValueChanged
+            If Not IsUpdateSuspended Then
+                controller.DisplayStart = dtStart.DateTime.Date + timeStart.Time.TimeOfDay
+            End If
+            UpdateIntervalControls()
+        End Sub
+        Private Sub timeEnd_EditValueChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles timeEnd.EditValueChanged
+            If IsUpdateSuspended Then
+                Return
+            End If
+            If IsIntervalValid() Then
+                controller.DisplayEnd = dtEnd.DateTime.Date + timeEnd.Time.TimeOfDay
+            Else
+                timeEnd.EditValue = New Date(controller.DisplayEnd.TimeOfDay.Ticks)
+            End If
 
-		Private Sub checkAllDay_CheckedChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles checkAllDay.CheckedChanged
-			controller.AllDay = Me.checkAllDay.Checked
-			If (Not IsUpdateSuspended) Then
-				UpdateAppointmentStatus()
-			End If
+        End Sub
+        Private Sub dtEnd_EditValueChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles dtEnd.EditValueChanged
+            If IsUpdateSuspended Then
+                Return
+            End If
+            If IsIntervalValid() Then
+                controller.DisplayEnd = dtEnd.DateTime.Date + timeEnd.Time.TimeOfDay
+            Else
+                dtEnd.EditValue = controller.DisplayEnd.Date
+            End If
+        End Sub
+        Private Function IsIntervalValid() As Boolean
+            Dim start As Date = dtStart.DateTime + timeStart.Time.TimeOfDay
+            Dim [end] As Date = dtEnd.DateTime + timeEnd.Time.TimeOfDay
+            Return [end] >= start
+        End Function
 
-			UpdateIntervalControls()
-		End Sub
-		#End Region
+        Private Sub checkAllDay_CheckedChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles checkAllDay.CheckedChanged
+            controller.AllDay = Me.checkAllDay.Checked
+            If Not IsUpdateSuspended Then
+                UpdateAppointmentStatus()
+            End If
 
-		#Region "Updating Form"
-		Protected Sub SuspendUpdate()
-			suspendUpdateCount += 1
-		End Sub
-		Protected Sub ResumeUpdate()
-			If suspendUpdateCount > 0 Then
-				suspendUpdateCount -= 1
-			End If
-		End Sub
+            UpdateIntervalControls()
+        End Sub
+        #End Region
 
-		Private Sub UpdateForm()
-			SuspendUpdate()
-			Try
-				txSubject.Text = controller.Subject
-				edStatus.Status = Appointments.Statuses(controller.StatusId)
-				edLabel.Label = Appointments.Labels(controller.LabelId)
+        #Region "Updating Form"
+        Protected Sub SuspendUpdate()
+            suspendUpdateCount += 1
+        End Sub
+        Protected Sub ResumeUpdate()
+            If suspendUpdateCount > 0 Then
+                suspendUpdateCount -= 1
+            End If
+        End Sub
 
-				dtStart.DateTime = controller.DisplayStart.Date
-				dtEnd.DateTime = controller.DisplayEnd.Date
+        Private Sub UpdateForm()
+            SuspendUpdate()
+            Try
+                txSubject.Text = controller.Subject
+                edStatus.Status = Appointments.Statuses(controller.StatusId)
+                edLabel.Label = Appointments.Labels(controller.LabelId)
 
-				timeStart.Time = New DateTime(controller.DisplayStart.TimeOfDay.Ticks)
-				timeEnd.Time = New DateTime(controller.DisplayEnd.TimeOfDay.Ticks)
-				checkAllDay.Checked = controller.AllDay
+                dtStart.DateTime = controller.DisplayStart.Date
+                dtEnd.DateTime = controller.DisplayEnd.Date
 
-				edStatus.Storage = control.Storage
-				edLabel.Storage = control.Storage
+                timeStart.Time = New Date(controller.DisplayStart.TimeOfDay.Ticks)
+                timeEnd.Time = New Date(controller.DisplayEnd.TimeOfDay.Ticks)
+                checkAllDay.Checked = controller.AllDay
 
-				txPrice.Text = controller.Price.ToString()
+                edStatus.Storage = control.Storage
+                edLabel.Storage = control.Storage
 
-				' Update resource selector
-				edResources.ResourceIds.Clear()
-				edResources.ResourceIds.Add(controller.ResourceId)
-			Finally
-				ResumeUpdate()
-			End Try
-			UpdateIntervalControls()
-		End Sub
+                txPrice.Text = controller.Price.ToString()
 
-		Protected Overridable Sub UpdateIntervalControls()
-			If IsUpdateSuspended Then
-				Return
-			End If
+                ' Update resource selector
+                edResources.ResourceIds.Clear()
+                edResources.ResourceIds.Add(controller.ResourceId)
+            Finally
+                ResumeUpdate()
+            End Try
+            UpdateIntervalControls()
+        End Sub
 
-			SuspendUpdate()
+        Protected Overridable Sub UpdateIntervalControls()
+            If IsUpdateSuspended Then
+                Return
+            End If
 
-			Try
-				dtStart.EditValue = controller.DisplayStart.Date
-				dtEnd.EditValue = controller.DisplayEnd.Date
-				timeStart.EditValue = New DateTime(controller.DisplayStart.TimeOfDay.Ticks)
-				timeEnd.EditValue = New DateTime(controller.DisplayEnd.TimeOfDay.Ticks)
+            SuspendUpdate()
 
-				timeStart.Visible = Not controller.AllDay
-				timeEnd.Visible = Not controller.AllDay
-				timeStart.Enabled = Not controller.AllDay
-				timeEnd.Enabled = Not controller.AllDay
-			Finally
-				ResumeUpdate()
-			End Try
-		End Sub
+            Try
+                dtStart.EditValue = controller.DisplayStart.Date
+                dtEnd.EditValue = controller.DisplayEnd.Date
+                timeStart.EditValue = New Date(controller.DisplayStart.TimeOfDay.Ticks)
+                timeEnd.EditValue = New Date(controller.DisplayEnd.TimeOfDay.Ticks)
 
-		Private Sub UpdateAppointmentStatus()
-			Dim currentStatus As AppointmentStatus = edStatus.Status
-			Dim newStatus As AppointmentStatus = controller.UpdateAppointmentStatus(currentStatus)
+                timeStart.Visible = Not controller.AllDay
+                timeEnd.Visible = Not controller.AllDay
+                timeStart.Enabled = Not controller.AllDay
+                timeEnd.Enabled = Not controller.AllDay
+            Finally
+                ResumeUpdate()
+            End Try
+        End Sub
 
-			If newStatus IsNot currentStatus Then
-				edStatus.Status = newStatus
-			End If
-		End Sub
+        Private Sub UpdateAppointmentStatus()
+            Dim currentStatus As AppointmentStatus = edStatus.Status
+            Dim newStatus As AppointmentStatus = controller.UpdateAppointmentStatus(currentStatus)
 
-		#End Region
+            If newStatus IsNot currentStatus Then
+                edStatus.Status = newStatus
+            End If
+        End Sub
 
-		#Region "Save changes"
-		Private Sub btnOK_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnOK.Click
-			' Required to check the appointment for conflicts.
-			If (Not controller.IsConflictResolved()) Then
-				Return
-			End If
+        #End Region
 
-			controller.Subject = txSubject.Text
-			controller.SetStatus(edStatus.Status)
-			controller.SetLabel(edLabel.Label)
-			controller.AllDay = Me.checkAllDay.Checked
-			controller.DisplayStart = Me.dtStart.DateTime.Date + Me.timeStart.Time.TimeOfDay
-			controller.DisplayEnd = Me.dtEnd.DateTime.Date + Me.timeEnd.Time.TimeOfDay
-			controller.Price = Convert.ToDecimal(txPrice.Text)
+        #Region "Save changes"
+        Private Sub btnOK_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnOK.Click
+            ' Required to check the appointment for conflicts.
+            If Not controller.IsConflictResolved() Then
+                Return
+            End If
 
-			controller.ResourceId = edResources.ResourceIds(0)
+            controller.Subject = txSubject.Text
+            controller.SetStatus(edStatus.Status)
+            controller.SetLabel(edLabel.Label)
+            controller.AllDay = Me.checkAllDay.Checked
+            controller.DisplayStart = Me.dtStart.DateTime.Date + Me.timeStart.Time.TimeOfDay
+            controller.DisplayEnd = Me.dtEnd.DateTime.Date + Me.timeEnd.Time.TimeOfDay
+            controller.Price = Convert.ToDecimal(txPrice.Text)
 
-			controller.ApplyChanges()
+            controller.ResourceId = edResources.ResourceIds(0)
 
-			For Each item As Object In edResources.ResourceIds
-				If item.Equals(controller.ResourceId) Then
-					Continue For
-				End If
+            controller.ApplyChanges()
 
-				Dim apt As Appointment = controller.EditedAppointmentCopy.Copy()
+            For Each item As Object In edResources.ResourceIds
+                If item.Equals(controller.ResourceId) Then
+                    Continue For
+                End If
 
-				apt.ResourceId = item
-				control.Storage.Appointments.Add(apt)
-			Next item
-		End Sub
-		#End Region
+                Dim apt As Appointment = controller.EditedAppointmentCopy.Copy()
 
-		#Region "CustomAppointmentFormController"
-		Public Class CustomAppointmentFormController
-			Inherits AppointmentFormController
-			Public Property Price() As Decimal
-				Get
-					Dim val As Object = EditedAppointmentCopy.CustomFields("Field1")
+                apt.ResourceId = item
+                control.Storage.Appointments.Add(apt)
+            Next item
+        End Sub
+        #End Region
 
-					If val Is Nothing OrElse val Is DBNull.Value Then
-						Return 0
-					Else
-						Return CDec(val)
-					End If
-				End Get
-				Set(ByVal value As Decimal)
-					EditedAppointmentCopy.CustomFields("Field1") = value
-				End Set
-			End Property
+        #Region "CustomAppointmentFormController"
+        Public Class CustomAppointmentFormController
+            Inherits AppointmentFormController
 
-			Private Property SourcePrice() As Decimal
-				Get
-					Return CDec(SourceAppointment.CustomFields("Field1"))
-				End Get
-				Set(ByVal value As Decimal)
-					SourceAppointment.CustomFields("Field1") = value
-				End Set
-			End Property
+            Public Property Price() As Decimal
+                Get
+                    Dim val As Object = EditedAppointmentCopy.CustomFields("Field1")
 
-			Public Sub New(ByVal control As SchedulerControl, ByVal apt As Appointment)
-				MyBase.New(control, apt)
-			End Sub
+                    If val Is Nothing OrElse val Is DBNull.Value Then
+                        Return 0
+                    Else
+                        Return DirectCast(val, Decimal)
+                    End If
+                End Get
+                Set(ByVal value As Decimal)
+                    EditedAppointmentCopy.CustomFields("Field1") = value
+                End Set
+            End Property
 
-			Public Overrides Function IsAppointmentChanged() As Boolean
-				If MyBase.IsAppointmentChanged() Then
-					Return True
-				End If
-				Return SourcePrice <> Price
-			End Function
+            Private Property SourcePrice() As Decimal
+                Get
+                    Return CDec(SourceAppointment.CustomFields("Field1"))
+                End Get
+                Set(ByVal value As Decimal)
+                    SourceAppointment.CustomFields("Field1") = value
+                End Set
+            End Property
 
-			Protected Overrides Sub ApplyCustomFieldsValues()
-				SourcePrice = Price
-			End Sub
-		End Class
-		#End Region
-	End Class
+            Public Sub New(ByVal control As SchedulerControl, ByVal apt As Appointment)
+                MyBase.New(control, apt)
+            End Sub
+
+            Public Overrides Function IsAppointmentChanged() As Boolean
+                If MyBase.IsAppointmentChanged() Then
+                    Return True
+                End If
+                Return SourcePrice <> Price
+            End Function
+
+            Protected Overrides Sub ApplyCustomFieldsValues()
+                SourcePrice = Price
+            End Sub
+        End Class
+        #End Region
+    End Class
 
 End Namespace
