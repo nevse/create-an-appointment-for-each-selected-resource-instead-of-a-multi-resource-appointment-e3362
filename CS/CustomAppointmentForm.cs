@@ -225,7 +225,7 @@ namespace SchedulerMultiResAppointments {
                 Appointment apt = controller.EditedAppointmentCopy.Copy();
 
                 apt.ResourceId = item;
-                control.Storage.Appointments.Add(apt);
+                control.DataStorage.Appointments.Add(apt);
             }
         }
         #endregion

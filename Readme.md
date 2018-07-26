@@ -28,7 +28,7 @@ private void btnOK_Click(object sender, System.EventArgs e) {
             continue;
         Appointment apt = controller.EditedAppointmentCopy.Copy();
         apt.ResourceId = item;
-        control.Storage.Appointments.Add(apt);
+        control.DataStorage.Appointments.Add(apt);
     }
 }
 ```
