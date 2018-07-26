@@ -17,8 +17,8 @@ namespace SchedulerMultiResAppointments {
         // See its declaration below.
         CustomAppointmentFormController controller;
 
-        protected AppointmentStorage Appointments {
-            get { return control.Storage.Appointments; }
+        protected IAppointmentStorage Appointments {
+            get { return control.DataStorage.Appointments; }
         }
 
         protected bool IsUpdateSuspended { 
@@ -143,8 +143,8 @@ namespace SchedulerMultiResAppointments {
             SuspendUpdate();
             try {
                 txSubject.Text = controller.Subject;
-                edStatus.Status = Appointments.Statuses[controller.StatusId];
-                edLabel.Label = Appointments.Labels[controller.LabelId];
+                edStatus.AppointmentStatus = Appointments.Statuses.GetById(controller.StatusKey);
+                edLabel.AppointmentLabel = Appointments.Labels.GetById(controller.LabelKey);
 
                 dtStart.DateTime = controller.DisplayStart.Date;
                 dtEnd.DateTime = controller.DisplayEnd.Date;
@@ -191,11 +191,11 @@ namespace SchedulerMultiResAppointments {
         }
 
         void UpdateAppointmentStatus() {
-            AppointmentStatus currentStatus = edStatus.Status;
-            AppointmentStatus newStatus = controller.UpdateAppointmentStatus(currentStatus);
+            IAppointmentStatus currentStatus = edStatus.AppointmentStatus;
+            IAppointmentStatus newStatus = controller.UpdateStatus(currentStatus);
             
             if (newStatus != currentStatus)
-                edStatus.Status = newStatus;
+                edStatus.AppointmentStatus = newStatus;
         }
 
         #endregion
